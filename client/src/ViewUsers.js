@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 export default function ViewUsers() {
-  const { token } = useOutletContext();
+  const { token, setToken } = useOutletContext();
 
   const [users, setUsers] = useState([]);
 
@@ -12,11 +12,18 @@ export default function ViewUsers() {
         Authorization: `Bearer ${token}`,
       },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          setToken(null);
+          localStorage.removeItem("token");
+          return;
+        }
+        return res.json();
+      })
       .then((users) => {
         setUsers(users);
       });
-  }, [token]);
+  }, [token, setToken]);
 
   const deleteUser = (username) => {
     fetch(`${process.env.REACT_APP_API_URL}/user/${username}`, {
@@ -26,6 +33,8 @@ export default function ViewUsers() {
       },
     }).then((res) => {
       if (!res.ok) {
+        setToken(null);
+        localStorage.removeItem("token");
         return;
       }
       setUsers(users.filter((user) => user.username !== username));

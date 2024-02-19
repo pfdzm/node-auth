@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 export default function Home() {
-  const { token } = useOutletContext();
+  const { token, setToken } = useOutletContext();
 
   const [user, setUser] = useState([]);
 
@@ -16,13 +16,17 @@ export default function Home() {
       },
     }).then((res) => {
       if (!res.ok) {
+        if (!res.ok) {
+          setToken(null);
+          localStorage.removeItem("token");
+        }
         return;
       }
       res.json().then((user) => {
         setUser(user);
       });
     });
-  }, [setUser, token]);
+  }, [setUser, token, setToken]);
 
   return (
     <>

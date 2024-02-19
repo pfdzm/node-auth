@@ -2,7 +2,7 @@ import styles from "./LoginForm.module.css";
 import { useOutletContext } from "react-router-dom";
 
 export default function CreateUser() {
-  const { token } = useOutletContext();
+  const { token, setToken } = useOutletContext();
   return (
     <form
       className={styles.form}
@@ -17,6 +17,11 @@ export default function CreateUser() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(data),
+        }).then((res) => {
+          if (!res.ok) {
+            setToken(null);
+            localStorage.removeItem("token");
+          }
         });
       }}
     >

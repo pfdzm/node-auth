@@ -34,6 +34,7 @@ function App() {
           <Outlet
             context={{
               token,
+              setToken,
             }}
           />
         )}

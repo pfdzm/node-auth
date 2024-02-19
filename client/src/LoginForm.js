@@ -28,7 +28,6 @@ export default function LoginForm({ setToken }) {
                 return;
               }
               res.text().then((token) => {
-                console.log(token);
                 setToken(token);
                 localStorage.setItem("token", token);
               });
