@@ -39,14 +39,6 @@ database.once("open", function () {
 
 const jwtSecret = new TextEncoder().encode("secret");
 
-// Basic Auth
-// req.headers.authorization = "Basic sda;lfkjdsalkfjdaskljfsdkalj"
-// req.headers.authorization = "Basic username:password"
-//
-// JWT
-// POST /api/login { username: "admin", password: "admin" } -> JWT (token)
-// req.headers.authorization = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
-
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -57,7 +49,6 @@ app.post("/login", async (req, res) => {
     return;
   }
 
-  // const token = jwt.sign({ username }, jwtSecret);
   const token = await new jose.SignJWT({ username })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -80,43 +71,43 @@ const authorizationMiddleware = async (req, res, next) => {
   }
 };
 
-const adminMiddleware = (req, res, next) => {
-  if (req.token.username !== "admin") {
-    res.status(403).send("Forbidden");
+app.get("/user", authorizationMiddleware, async (req, res) => {
+  const allUsers = await User.find();
+  res.send(allUsers);
+});
+
+app.get("/user/:username", authorizationMiddleware, async (req, res) => {
+  const username = req.params.username;
+  const user = await User.findOne({ username });
+  if (user === null) {
+    res.status(404).send("User not found");
     return;
   }
-  next();
-};
+  res.status(200).send(user);
+});
 
-// req.headers.authorization = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
-app.get(
-  "/all-users",
-  authorizationMiddleware,
-  adminMiddleware,
-  async (req, res) => {
-    const allUsers = await User.find();
-    res.send(allUsers);
+app.post("/user", authorizationMiddleware, async (req, res) => {
+  const { username, password: rawPassword } = req.body;
+  const password = bcrypt.hashSync(rawPassword, 10);
+  await User.create({ username, password });
+  res.status(201).send("User created");
+});
+
+app.delete("/user/:username", authorizationMiddleware, async (req, res) => {
+  const username = req.params.username;
+
+  if (username === "admin") {
+    res.status(403).send("Cannot delete root user");
+    return;
   }
-);
-
-app.post("/reset-password", authorizationMiddleware, (req, res) => {
-  // reset password
-  const newPassword = req.body.password;
-  password = newPassword;
-  res.send("Password reset");
+  await User.deleteOne({ username });
+  res.status(200).send("User deleted");
 });
 
-app.post("reset-pw-through-security-questions", (req, res) => {
-  // check security questions
-  const securityQuestions = req.body.securityQuestions;
-  // check users db for security questions
-  // if security questions are correct
-
-  // reset password
-  const newPassword = req.body.password;
-  password = newPassword;
-  res.send("Password reset");
+app.get("/whoami", authorizationMiddleware, (req, res) => {
+  res.send({ username: req.token.username });
 });
+
 const PORT = process.env.PORT ?? 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
