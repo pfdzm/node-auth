@@ -19,11 +19,12 @@ function App() {
             <Link to="/view-users">View all users</Link>
           </li>
           <li
+            class={styles.logout}
             onClick={() => {
               setToken(null);
             }}
           >
-            Logout
+            <button>Logout</button>
           </li>
         </ul>
       </nav>

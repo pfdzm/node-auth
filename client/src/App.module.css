@@ -16,3 +16,20 @@
   max-width: 40rem;
   margin: 0 auto;
 }
+
+.logout {
+  margin-left: auto;
+
+  /* appear like a normal anchor element */
+  button {
+    background: none;
+    border: none;
+    color: blue;
+    text-decoration: underline;
+    font-size: inherit;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+}
