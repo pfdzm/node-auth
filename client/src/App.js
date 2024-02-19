@@ -22,6 +22,7 @@ function App() {
             class={styles.logout}
             onClick={() => {
               setToken(null);
+              localStorage.removeItem("token");
             }}
           >
             <button>Logout</button>
