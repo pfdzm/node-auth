@@ -6,9 +6,9 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(false);
   return (
-    <main class={styles.app}>
+    <main className={styles.app}>
       <form
-        class={styles.form}
+        className={styles.form}
         onSubmit={(e) => {
           e.preventDefault();
           const formData = new FormData(e.target);
