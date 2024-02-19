@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
+const jose = require("jose");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
@@ -37,7 +37,7 @@ database.once("open", function () {
   });
 });
 
-const jwtSecret = "secret";
+const jwtSecret = new TextEncoder().encode("secret");
 
 // Basic Auth
 // req.headers.authorization = "Basic sda;lfkjdsalkfjdaskljfsdkalj"
@@ -57,20 +57,27 @@ app.post("/login", async (req, res) => {
     return;
   }
 
-  const token = jwt.sign({ username }, jwtSecret);
+  // const token = jwt.sign({ username }, jwtSecret);
+  const token = await new jose.SignJWT({ username })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setIssuer("node-auth")
+    .setExpirationTime("2h")
+    .sign(jwtSecret);
   res.status(200).send(token);
 });
 
-const authorizationMiddleware = (req, res, next) => {
-  const token = req.headers.authorization.split(" ")[1];
-  jwt.verify(token, jwtSecret, (err, decoded) => {
-    if (err) {
-      res.status(401).send("Unauthorized");
-      return;
-    }
-    req.token = decoded;
+const authorizationMiddleware = async (req, res, next) => {
+  try {
+    const rawToken = req.headers.authorization.split(" ")[1];
+    const { payload } = await jose.jwtVerify(rawToken, jwtSecret, {
+      issuer: "node-auth",
+    });
+    req.token = payload;
     next();
-  });
+  } catch (error) {
+    res.status(401).send("Unauthorized");
+  }
 };
 
 const adminMiddleware = (req, res, next) => {
