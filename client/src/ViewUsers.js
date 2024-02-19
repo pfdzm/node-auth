@@ -14,8 +14,10 @@ export default function ViewUsers() {
     })
       .then((res) => {
         if (!res.ok) {
-          setToken(null);
-          localStorage.removeItem("token");
+          if (res.status === 401) {
+            setToken(null);
+            localStorage.removeItem("token");
+          }
           return;
         }
         return res.json();
@@ -33,8 +35,10 @@ export default function ViewUsers() {
       },
     }).then((res) => {
       if (!res.ok) {
-        setToken(null);
-        localStorage.removeItem("token");
+        if (res.status === 401) {
+          setToken(null);
+          localStorage.removeItem("token");
+        }
         return;
       }
       setUsers(users.filter((user) => user.username !== username));

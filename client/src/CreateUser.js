@@ -19,8 +19,10 @@ export default function CreateUser() {
           body: JSON.stringify(data),
         }).then((res) => {
           if (!res.ok) {
-            setToken(null);
-            localStorage.removeItem("token");
+            if (res.status === 401) {
+              setToken(null);
+              localStorage.removeItem("token");
+            }
           }
         });
       }}

@@ -16,7 +16,7 @@ export default function Home() {
       },
     }).then((res) => {
       if (!res.ok) {
-        if (!res.ok) {
+        if (res.status === 401) {
           setToken(null);
           localStorage.removeItem("token");
         }
