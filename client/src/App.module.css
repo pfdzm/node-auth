@@ -1,14 +1,18 @@
-.app {
-  padding: 1rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  max-width: 32rem;
-  margin: 0 auto;
+.nav {
+  ul {
+    display: flex;
+    padding: 1rem;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  li {
+    list-style: none;
+  }
 }
 
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.content {
+  padding: 1rem;
+  max-width: 40rem;
+  margin: 0 auto;
 }
