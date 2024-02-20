@@ -25,7 +25,7 @@ export default function ViewUsers() {
       .then((users) => {
         setUsers(users);
       });
-  }, [token, setToken]);
+  }, [token, setToken, setUsers]);
 
   const deleteUser = (username) => {
     fetch(`${process.env.REACT_APP_API_URL}/user/${username}`, {
@@ -41,7 +41,7 @@ export default function ViewUsers() {
         }
         return;
       }
-      setUsers(users.filter((user) => user.username !== username));
+      setUsers((users) => users.filter((user) => user.username !== username));
     });
   };
 
