@@ -1,0 +1,24 @@
+# use can use Rest Client for VS Code to run these requests
+# https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+# @host = http://127.0.0.1:51093
+@host = http://localhost:8080
+@token = eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzA4NTQzMTk1LCJpc3MiOiJub2RlLWF1dGgiLCJleHAiOjE3MDg1NTAzOTV9.neiV0RmWmTdb16oudrhzMFDiiBJGfdoUHlqWCS4DgFg
+
+
+###
+POST {{host}}/login HTTP/1.1
+Content-Type: application/json
+
+{"username":"admin","password":"admin"}
+###
+
+POST {{host}}/user HTTP/1.1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"username":"pablo-3","password":"test123"}
+###
+
+GET {{host}}/user HTTP/1.1
+Authorization: Bearer {{token}}
