@@ -1,47 +1,25 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import useAPI from "./useAPI";
 
 export default function ViewUsers() {
   const { token, setToken } = useOutletContext();
 
   const [users, setUsers] = useState([]);
 
+  const fetchAPI = useAPI(token, setToken);
+
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/user`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) {
-          if (res.status === 401) {
-            setToken(null);
-            localStorage.removeItem("token");
-          }
-          return;
-        }
-        return res.json();
-      })
+    fetchAPI("/user", {})
+      .then((res) => res.json())
       .then((users) => {
         setUsers(users);
       });
-  }, [token, setToken, setUsers]);
+  }, [fetchAPI, setUsers]);
 
   const deleteUser = (username) => {
-    fetch(`${process.env.REACT_APP_API_URL}/user/${username}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }).then((res) => {
-      if (!res.ok) {
-        if (res.status === 401) {
-          setToken(null);
-          localStorage.removeItem("token");
-        }
-        return;
-      }
-      setUsers((users) => users.filter((user) => user.username !== username));
+    fetchAPI(`/user/${username}`, { method: "DELETE" }).then(() => {
+      setUsers((usrs) => usrs.filter((user) => user.username !== username));
     });
   };
 

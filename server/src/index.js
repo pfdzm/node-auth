@@ -1,11 +1,11 @@
-const express = require("express");
-const cors = require("cors");
+const { serve } = require("@hono/node-server");
+const { Hono } = require("hono");
+const { cors } = require("hono/cors");
 const jose = require("jose");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
-const app = express();
-app.use(express.json());
+const app = new Hono();
 app.use(cors());
 
 const User = mongoose.model("User", {
@@ -39,14 +39,32 @@ database.once("open", function () {
 
 const jwtSecret = new TextEncoder().encode("secret");
 
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+const authorizationMiddleware = async (c, next) => {
+  try {
+    const rawToken = c.req.header("Authorization").split(" ")[1];
+    const { payload } = await jose.jwtVerify(rawToken, jwtSecret, {
+      issuer: "node-auth",
+    });
+    c.set("token", payload);
+    await next();
+  } catch (error) {
+    c.status(401);
+    return c.text("Unauthorized");
+  }
+};
+
+app.get("/", async (c) => {
+  return c.text("Hello World");
+});
+
+app.post("/login", async (c) => {
+  const { username, password } = await c.req.json();
 
   const user = await User.findOne({ username });
 
   if (user === null || !bcrypt.compareSync(password, user.password)) {
-    res.status(401).send("Unauthorized");
-    return;
+    c.status(401);
+    return c.text("Unauthorized");
   }
 
   const token = await new jose.SignJWT({ username })
@@ -55,60 +73,62 @@ app.post("/login", async (req, res) => {
     .setIssuer("node-auth")
     .setExpirationTime("2h")
     .sign(jwtSecret);
-  res.status(200).send(token);
+  c.status(200);
+  return c.text(token);
 });
 
-const authorizationMiddleware = async (req, res, next) => {
-  try {
-    const rawToken = req.headers.authorization.split(" ")[1];
-    const { payload } = await jose.jwtVerify(rawToken, jwtSecret, {
-      issuer: "node-auth",
-    });
-    req.token = payload;
-    next();
-  } catch (error) {
-    res.status(401).send("Unauthorized");
-  }
-};
-
-app.get("/user", authorizationMiddleware, async (req, res) => {
+app.get("/user", authorizationMiddleware, async (c) => {
   const allUsers = await User.find();
-  res.send(allUsers);
+  return c.json(allUsers);
 });
 
-app.get("/user/:username", authorizationMiddleware, async (req, res) => {
-  const username = req.params.username;
+app.get("/user/:username", authorizationMiddleware, async (c) => {
+  const username = c.req.param("username");
   const user = await User.findOne({ username });
   if (user === null) {
-    res.status(404).send("User not found");
-    return;
+    c.status(404);
+    return c.text("User not found");
   }
-  res.status(200).send(user);
+  c.status(200);
+  return c.json(user);
 });
 
-app.post("/user", authorizationMiddleware, async (req, res) => {
-  const { username, password: rawPassword } = req.body;
+app.post("/user", authorizationMiddleware, async (c) => {
+  const { username, password: rawPassword } = await c.req.json();
+  if (username === "admin") {
+    c.status(403);
+    return c.text("Cannot create root user");
+  }
   const password = bcrypt.hashSync(rawPassword, 10);
   await User.create({ username, password });
-  res.status(201).send("User created");
+  c.status(201);
+  return c.text("User created");
 });
 
-app.delete("/user/:username", authorizationMiddleware, async (req, res) => {
-  const username = req.params.username;
+app.delete("/user/:username", authorizationMiddleware, async (c) => {
+  const username = c.req.param("username");
 
   if (username === "admin") {
-    res.status(403).send("Cannot delete root user");
-    return;
+    c.status(403);
+    return c.text("Cannot delete root user");
   }
   await User.deleteOne({ username });
-  res.status(200).send("User deleted");
+  c.status(200);
+  return c.text("User deleted");
 });
 
-app.get("/whoami", authorizationMiddleware, (req, res) => {
-  res.send({ username: req.token.username });
+app.get("/whoami", authorizationMiddleware, (c) => {
+  const { username } = c.get("token");
+  return c.json({ username });
 });
 
 const PORT = process.env.PORT ?? 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+serve(
+  {
+    fetch: app.fetch,
+    port: PORT,
+  },
+  () => {
+    console.log(`Server running`);
+  }
+);
