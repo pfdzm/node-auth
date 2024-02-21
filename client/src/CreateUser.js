@@ -1,8 +1,10 @@
 import styles from "./LoginForm.module.css";
 import { useOutletContext } from "react-router-dom";
+import useAPI from "./useAPI";
 
 export default function CreateUser() {
   const { token, setToken } = useOutletContext();
+  const fetchAPI = useAPI(token, setToken);
   return (
     <form
       className={styles.form}
@@ -10,20 +12,9 @@ export default function CreateUser() {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        fetch(`${process.env.REACT_APP_API_URL}/user`, {
+        fetchAPI("/user", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify(data),
-        }).then((res) => {
-          if (!res.ok) {
-            if (res.status === 401) {
-              setToken(null);
-              localStorage.removeItem("token");
-            }
-          }
         });
       }}
     >
