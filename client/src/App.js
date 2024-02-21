@@ -19,7 +19,7 @@ function App() {
             <Link to="/view-users">View all users</Link>
           </li>
           <li
-            class={styles.logout}
+            className={styles.logout}
             onClick={() => {
               setToken(null);
               localStorage.removeItem("token");
