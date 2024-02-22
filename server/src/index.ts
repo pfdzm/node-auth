@@ -1,17 +1,27 @@
-const express = require("express");
-const cors = require("cors");
-const jose = require("jose");
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+import express, { type RequestHandler } from "express";
+import cors from "cors";
+import jose from "jose";
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const User = mongoose.model("User", {
-  username: String,
-  password: String,
+const UserSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
 });
+const User = mongoose.model<{
+  username: string;
+  password: string;
+}>("User", UserSchema);
 
 const createRootUser = async () => {
   const rootUser = await User.exists({ username: "admin" });
@@ -39,6 +49,10 @@ database.once("open", function () {
 
 const jwtSecret = new TextEncoder().encode("secret");
 
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -58,13 +72,18 @@ app.post("/login", async (req, res) => {
   res.status(200).send(token);
 });
 
-const authorizationMiddleware = async (req, res, next) => {
+const fail = (reason: string): never => {
+  throw new Error(reason);
+};
+
+const authorizationMiddleware: RequestHandler = async (req, res, next) => {
   try {
-    const rawToken = req.headers.authorization.split(" ")[1];
+    const rawToken =
+      req.headers.authorization?.split(" ")[1] ?? fail("No token");
     const { payload } = await jose.jwtVerify(rawToken, jwtSecret, {
       issuer: "node-auth",
     });
-    req.token = payload;
+    res.locals.token = payload;
     next();
   } catch (error) {
     res.status(401).send("Unauthorized");
@@ -105,7 +124,7 @@ app.delete("/user/:username", authorizationMiddleware, async (req, res) => {
 });
 
 app.get("/whoami", authorizationMiddleware, (req, res) => {
-  res.send({ username: req.token.username });
+  res.send({ username: res.locals.token?.username ?? fail("no token!") });
 });
 
 const PORT = process.env.PORT ?? 8080;
