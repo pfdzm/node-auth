@@ -1,6 +1,6 @@
 import express, { type RequestHandler } from "express";
 import cors from "cors";
-import jose from "jose";
+import * as jose from "jose";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
