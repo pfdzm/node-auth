@@ -2,9 +2,11 @@ import styles from "./LoginForm.module.css";
 import { useState } from "react";
 import Spinner from "./Spinner";
 // import { useOutletContext } from "react-router-dom";
+import useAPI from "./useAPI";
 
 export default function LoginForm({ setToken }) {
   const [loading, setLoading] = useState(false);
+  const fetchAPI = useAPI();
   return (
     <>
       <form
@@ -14,19 +16,11 @@ export default function LoginForm({ setToken }) {
           const formData = new FormData(e.target);
           const data = Object.fromEntries(formData);
           setLoading(true);
-          fetch(`${process.env.REACT_APP_API_URL}/login`, {
+          fetchAPI("/login", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
             body: JSON.stringify(data),
           })
             .then((res) => {
-              if (!res.ok) {
-                setToken(null);
-                localStorage.removeItem("token");
-                return;
-              }
               res.text().then((token) => {
                 setToken(token);
                 localStorage.setItem("token", token);
